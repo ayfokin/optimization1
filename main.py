@@ -228,3 +228,4 @@ def parabolic(function, epsilon):
 
     return (x1 + x3) / 2
 
+
