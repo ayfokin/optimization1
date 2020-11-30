@@ -103,3 +103,39 @@ def get_n(left_border, right_border, epsilon):
 
 
 functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f5, 0.5, 2.5]]
+print(get_n(-0.5, 0.5, 0.00001))
+
+#for function in functions:
+ #   iteration = 0
+  #  for epsilon in range(NUMBER_OF_EPSILON):
+   #     epsilon = epsilon * 1 / NUMBER_OF_EPSILON + 1 / NUMBER_OF_EPSILON
+
+
+def parabolic(function, a, b, epsilon):
+    x1 = a
+    x2 = (a + b) / 2
+    x3 = b
+    f1 = function(x1)
+    f3 = function(x3)
+    while x3 - x1 > epsilon:
+        x2 = (x1 + x3) / 2
+        f2 = function(x2)
+        u = x2 - 0.5*((f2 - f3)*(x2 - x1)**2 - (f2 - f1)*(x2 - x3)**2)/((x2 - x1)*(f2 - f3) - (x2 - x3)*(f2 - f1))
+        fu = function(u)
+        if x2 < u:
+            x2, u, f2, fu = u, x2, fu, f2
+        if f2 < fu:
+            x1 = u
+            f1 = fu
+        if f2 > fu:
+            x3 = x2
+            f3 = f2
+        if f2 == fu:
+            x1 = u
+            x3 = x2
+            f1 = fu
+            f3 = f2
+    return (x1 + x3) / 2
+
+
+print(parabolic(f1, -0.5, 0.5, 0.001))
