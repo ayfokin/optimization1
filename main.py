@@ -1,7 +1,33 @@
 import math
-
+import pandas as pd
+import numpy as np
 
 NUMBER_OF_EPSILON = 10000
+
+
+class Data:
+    #borders массив кортежей типа [a, b], где a-начало отрезка, b конец
+    #lengths массив длин отрезков(включая начальный и все промежуточные)
+    #dots массив кортежей типа [a, b], где a-какая-то точка, b какая-то точка, хз какие точно точки, думаю те которые
+    #участвуют в вычислении границ
+    #func_results массив кортежей типа [a, b], где a-значение f в первой точке, b-во второй
+    def __init__(self, borders, lengths, dots, func_results):
+        self.borders = borders
+        self.lengths = lengths
+        self.dots = dots
+        self.func_results = func_results
+
+    def create_dataframe(self):
+        df = pd.DataFrame({
+            "start_point": np.array(self.borders)[:, 0],
+            "end_point": np.array(self.borders)[:, 1],
+            "length": self.lengths,
+            "x1": np.array(self.dots)[:, 0],
+            "f(x1)": np.array(self.func_results)[:, 0],
+            "x2": np.array(self.dots)[:, 1],
+            "f(x2)": np.array(self.func_results)[:, 0]
+        })
+        return df
 
 
 def sign(x):
@@ -201,17 +227,22 @@ print(get_n(-0.5, 0.5, 0.00001))
    #     epsilon = epsilon * 1 / NUMBER_OF_EPSILON + 1 / NUMBER_OF_EPSILON
 
 
-def parabolic(function, epsilon):
+def parabolic(function, epsilon, data):
     x1 = function[1]
     x3 = function[2]
     f1 = function[0](x1)
     f3 = function[0](x3)
-
+    data.borders.append([x1, x3])
+    data.lengths.append(math.fabs(x3 - x1))
+    data.func_results.append([f1, f3])
+    data.dots.append([x1, x3])
     while x3 - x1 > epsilon:
         x2 = (x1 + x3) / 2
         f2 = function[0](x2)
         u = x2 - 0.5*((f2 - f3)*(x2 - x1)**2 - (f2 - f1)*(x2 - x3)**2)/((x2 - x1)*(f2 - f3) - (x2 - x3)*(f2 - f1))
         fu = function[0](u)
+        data.func_results.append([f2, fu])
+        data.dots.append([x2, u])
         if x2 < u:
             x2, u, f2, fu = u, x2, fu, f2
         if f2 < fu:
@@ -225,7 +256,11 @@ def parabolic(function, epsilon):
             x3 = x2
             f1 = fu
             f3 = f2
-
+        data.borders.append([x1, x3])
+        data.lengths.append(math.fabs(x3 - x1))
     return (x1 + x3) / 2
 
 
+parabolic_data = Data([], [], [], [])
+print(parabolic(functions[0], 0.001, parabolic_data))
+print(parabolic_data.create_dataframe())
