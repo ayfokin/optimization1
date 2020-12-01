@@ -230,16 +230,6 @@ def get_n(left_border, right_border, epsilon):
 
 
 functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f5, 0.5, 2.5]]
-print(dichotomy(functions[0], 0.1))
-print(golden_ratio(functions[0], 0.1))
-print(fibonacci(functions[0], 0.1))
-
-print(get_n(-0.5, 0.5, 0.00001))
-
-#for function in functions:
- #   iteration = 0
-  #  for epsilon in range(NUMBER_OF_EPSILON):
-   #     epsilon = epsilon * 1 / NUMBER_OF_EPSILON + 1 / NUMBER_OF_EPSILON
 
 
 def parabolic(function, epsilon, data):
