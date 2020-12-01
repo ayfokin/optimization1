@@ -6,11 +6,11 @@ NUMBER_OF_EPSILON = 10000
 
 
 class Data:
-    #borders массив кортежей типа [a, b], где a-начало отрезка, b конец
-    #lengths массив длин отрезков(включая начальный и все промежуточные)
-    #dots массив кортежей типа [a, b], где a-какая-то точка, b какая-то точка, хз какие точно точки, думаю те которые
-    #участвуют в вычислении границ
-    #func_results массив кортежей типа [a, b], где a-значение f в первой точке, b-во второй
+    # borders массив кортежей типа [a, b], где a-начало отрезка, b конец
+    # lengths массив длин отрезков(включая начальный и все промежуточные)
+    # dots массив кортежей типа [a, b], где a-какая-то точка, b какая-то точка, хз какие точно точки, думаю те которые
+    # участвуют в вычислении границ
+    # func_results массив кортежей типа [a, b], где a-значение f в первой точке, b-во второй
     def __init__(self, borders, lengths, dots, func_results):
         self.borders = borders
         self.lengths = lengths
@@ -58,12 +58,11 @@ def f5(x):
     return 0.2 * x * math.log10(x) + (x - 2.3) ** 2
 
 
-def dichotomy(function, epsilon):
+def dichotomy(function, epsilon, data):
     iteration = 0
     delta = epsilon * 0.49
     left_border = function[1]
     right_border = function[2]
-
     x1 = 0
     while right_border - left_border < epsilon:
         iteration += 1
@@ -72,6 +71,10 @@ def dichotomy(function, epsilon):
         x2 = middle + delta
         fx1 = function[0](x1)
         fx2 = function[0](x2)
+        data.borders.append([left_border, right_border])
+        data.lengths.append(right_border - left_border)
+        data.dots.append([x1, x2])
+        data.func_results.append([fx1, fx2])
 
         if fx1 > fx2:
             left_border = x1
@@ -86,7 +89,7 @@ def dichotomy(function, epsilon):
     return x1
 
 
-def golden_ratio(function, epsilon):
+def golden_ratio(function, epsilon, data):
     iteration = 0
     left_border = function[1]
     right_border = function[2]
@@ -98,6 +101,10 @@ def golden_ratio(function, epsilon):
         x2 = right_border - 0.381966011 * (right_border - left_border)
         fx1 = function[0](x1)
         fx2 = function[0](x2)
+        data.borders.append([left_border, right_border])
+        data.lengths.append(right_border - left_border)
+        data.dots.append([x1, x2])
+        data.func_results.append([fx1, fx2])
 
         if fx1 > fx2:
             left_border = x1
@@ -112,7 +119,7 @@ def golden_ratio(function, epsilon):
     return x1
 
 
-def fibonacci(function, epsilon):
+def fibonacci(function, epsilon, data):
     n = get_n(function[1], function[2], epsilon)
     a = function[1]
     b = function[2]
@@ -123,6 +130,10 @@ def fibonacci(function, epsilon):
         k += 1
         fx1 = function[0](x1)
         fx2 = function[0](x2)
+        data.borders.append([a, b])
+        data.lengths.append(b - a)
+        data.dots.append([x1, x2])
+        data.func_results.append([fx1, fx2])
 
         if fx1 < fx2:
             b = x2
@@ -219,12 +230,6 @@ def get_n(left_border, right_border, epsilon):
 
 
 functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f5, 0.5, 2.5]]
-print(get_n(-0.5, 0.5, 0.00001))
-
-#for function in functions:
- #   iteration = 0
-  #  for epsilon in range(NUMBER_OF_EPSILON):
-   #     epsilon = epsilon * 1 / NUMBER_OF_EPSILON + 1 / NUMBER_OF_EPSILON
 
 
 def parabolic(function, epsilon, data):
