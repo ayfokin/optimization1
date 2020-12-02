@@ -1,8 +1,9 @@
 import math
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-NUMBER_OF_EPSILON = 10000
+NUMBER_OF_EPSILON = 1000
 
 
 class Data:
@@ -11,6 +12,11 @@ class Data:
     # dots массив кортежей типа [a, b], где a-какая-то точка, b какая-то точка, хз какие точно точки, думаю те которые
     # участвуют в вычислении границ
     # func_results массив кортежей типа [a, b], где a-значение f в первой точке, b-во второй
+    borders = []
+    lengths = []
+    dots = []
+    func_results = []
+
     def __init__(self, borders, lengths, dots, func_results):
         self.borders = borders
         self.lengths = lengths
@@ -28,6 +34,12 @@ class Data:
             "f(x2)": np.array(self.func_results)[:, 0]
         })
         return df
+
+    def clear_data(self):
+        self.borders = []
+        self.lengths = []
+        self.dots = []
+        self.func_results = []
 
 
 def sign(x):
@@ -59,6 +71,7 @@ def f5(x):
 
 
 def dichotomy(function, epsilon, data):
+    data.clear_data()
     iteration = 0
     delta = epsilon * 0.49
     left_border = function[1]
@@ -90,6 +103,7 @@ def dichotomy(function, epsilon, data):
 
 
 def golden_ratio(function, epsilon, data):
+    data.clear_data()
     iteration = 0
     left_border = function[1]
     right_border = function[2]
@@ -120,6 +134,7 @@ def golden_ratio(function, epsilon, data):
 
 
 def fibonacci(function, epsilon, data):
+    data.clear_data()
     n = get_n(function[1], function[2], epsilon)
     a = function[1]
     b = function[2]
@@ -151,6 +166,7 @@ def fibonacci(function, epsilon, data):
 
 
 def combined_brent(function, epsilon):
+
     a = function[1]
     c = function[2]
 
@@ -219,7 +235,6 @@ def combined_brent(function, epsilon):
     return x
                     
 
-
 def get_fibonacci(n):
     return round(1 / math.sqrt(5) * (((1 + math.sqrt(5)) / 2) ** n - ((1 - math.sqrt(5)) / 2) ** n))
 
@@ -233,6 +248,7 @@ functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f
 
 
 def parabolic(function, epsilon, data):
+    data.clear_data()
     x1 = function[1]
     x3 = function[2]
     f1 = function[0](x1)
@@ -266,6 +282,15 @@ def parabolic(function, epsilon, data):
     return (x1 + x3) / 2
 
 
+def find_ordinate(functions, method, epsilons):
+    data = Data([], [], [], [])
+    y = []
+    for epsilon in epsilons:
+        method(functions[0], epsilon, data)
+        y.append(len(data.create_dataframe().values))
+    return y
+
+
 parabolic_data = Data([], [], [], [])
 dichotomy_data = Data([], [], [], [])
 golden_ratio_data = Data([], [], [], [])
@@ -278,3 +303,13 @@ print(parabolic_data.create_dataframe())
 print(golden_ratio_data.create_dataframe())
 print(dichotomy_data.create_dataframe())
 print(fibonacci_data.create_dataframe())
+epsilons = [0.0001 * (i + 1) for i in range(NUMBER_OF_EPSILON)]
+x = [math.log2(epsilon) for epsilon in epsilons]
+plt.plot(x, find_ordinate(functions, dichotomy, epsilons), label="dichotomy")
+plt.plot(x, find_ordinate(functions, golden_ratio, epsilons), label="golden_ratio")
+plt.plot(x, find_ordinate(functions, fibonacci, epsilons), label="fibonacci")
+plt.plot(x, find_ordinate(functions, parabolic, epsilons), label="parabolic")
+plt.xlabel("log(eps)")
+plt.ylabel("Iteration quantity")
+plt.legend(loc="best")
+plt.show()
