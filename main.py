@@ -64,7 +64,7 @@ def dichotomy(function, epsilon, data):
     left_border = function[1]
     right_border = function[2]
     x1 = 0
-    while right_border - left_border < epsilon:
+    while right_border - left_border > epsilon:
         iteration += 1
         middle = (left_border + right_border) / 2
         x1 = middle - delta
@@ -95,7 +95,7 @@ def golden_ratio(function, epsilon, data):
     right_border = function[2]
 
     x1 = 0
-    while right_border - left_border < epsilon:
+    while right_border - left_border > epsilon:
         iteration += 1
         x1 = left_border + 0.381966011 * (right_border - left_border)
         x2 = right_border - 0.381966011 * (right_border - left_border)
@@ -267,5 +267,14 @@ def parabolic(function, epsilon, data):
 
 
 parabolic_data = Data([], [], [], [])
+dichotomy_data = Data([], [], [], [])
+golden_ratio_data = Data([], [], [], [])
+fibonacci_data = Data([], [], [], [])
 print(parabolic(functions[0], 0.001, parabolic_data))
+print(dichotomy(functions[0], 0.001, dichotomy_data))
+print(golden_ratio(functions[0], 0.001, golden_ratio_data))
+print(fibonacci(functions[0], 0.001, fibonacci_data))
 print(parabolic_data.create_dataframe())
+print(golden_ratio_data.create_dataframe())
+print(dichotomy_data.create_dataframe())
+print(fibonacci_data.create_dataframe())
