@@ -42,14 +42,6 @@ class Data:
         self.func_results = []
 
 
-def sign(x):
-    if x > 0:
-        return 1
-    if x < 1:
-        return -1
-    return 0
-
-
 def f1(x):
     return -5 * x ** 5 + 4 * x ** 4 - 12 * x ** 3 + 11 * x ** 2 - 2 * x + 1
 
@@ -165,47 +157,68 @@ def fibonacci(function, epsilon, data):
     return x1
 
 
-def combined_brent(function, epsilon):
+def combined_brent(function, epsilon, data):
+    data.clear_data()
 
     a = function[1]
     c = function[2]
 
-    x = w = v = (a + c) / 2
-
+    x = w = v = a + 0.381966011 * (c - a)
     fx = fw = fv = function[0](x)
+    d = 0
+    e = d
 
-    d = e = c - a
+    data.borders.append([a, c])
+    data.lengths.append(math.fabs(d))
+    data.func_results.append([function[0](a), function[0](c)])
+    data.dots.append([a, c])
 
-    while (c - a) < epsilon:
-        g = e
-        e = d
+    t = 1e-4
+    while True:
+        tol = epsilon * abs(x) + t
 
-        u = 0
-        if x != w and w != v and x != v:
-            f2 = function[0](x)
-            f1 = function[0](v)
-            f3 = function[0](w)
-            u = x - 0.5 * ((f2 - f3) * (x - w) ** 2 - (f2 - f1) * (x - v) ** 2) /\
-                ((x - w) * (f2 - f3) - (x - v) * (f2 - f1))
+        if abs(x - (a + c) / 2) <= 2 * tol - (c - a) / 2:
+            break
 
-        if (a + epsilon < u < c - epsilon) and (abs(u - x) < g / 2):
-            d = abs(u - x)
+        r = q = p = 0
+
+        if abs(e) > tol:
+            r = (x - w) * (fx - fv)
+            q = (x - v) * (fx - fw)
+            p = (x - v) * q - (x - w) * r
+            q = 2 * (q - r)
+
+            if q > 0:
+                p = -p
+
+            q = abs(q)
+            r, e = e, d
+
+        if (abs(p) < abs(0.5 * q * r)) and (q * (a - x) < p) and (p < q * (c - x)):
+            d = p / q
+            u = x + d
+
+            if (u - a < 2 * tol) and (c - u < 2 * tol):
+                d = tol if x < (a + c) / 2 else -tol
 
         else:
-            if x < (c - a) / 2:
-                u = x + 0.381966011 * (c - x)
-                d = c - x
+            if x < (c + a) / 2:
+                e = c - x
+                d = 0.381966011 * e
             else:
-                u = x - 0.381966011 * (x - a)
-                d = x - a
+                e = a - x
+                d = 0.381966011 * e
 
-        if abs(u - x) < epsilon:
-            u = x + sign(u - x) * epsilon
+        if tol <= abs(d):
+            u = x + d
+        elif d > 0:
+            u = x + tol
+        else:
+            u = x - tol
 
         fu = function[0](u)
 
-        if fu < fx:
-
+        if fu <= fx:
             if u >= x:
                 a = x
             else:
@@ -229,9 +242,14 @@ def combined_brent(function, epsilon):
                 w = u
                 fv = fw
                 fw = fu
-            elif fu <= fv or v == x or v == w:
+            elif fu <= fv or v == x or v == w < epsilon:
                 v = u
                 fv = fu
+        data.borders.append([a, c])
+        data.lengths.append(math.fabs(d))
+        data.func_results.append([function[0](a), function[0](c)])
+        data.dots.append([a, c])
+
     return x
                     
 
@@ -295,20 +313,24 @@ parabolic_data = Data([], [], [], [])
 dichotomy_data = Data([], [], [], [])
 golden_ratio_data = Data([], [], [], [])
 fibonacci_data = Data([], [], [], [])
+combined_brent_data = Data([], [], [], [])
 print(parabolic(functions[0], 0.001, parabolic_data))
 print(dichotomy(functions[0], 0.001, dichotomy_data))
 print(golden_ratio(functions[0], 0.001, golden_ratio_data))
 print(fibonacci(functions[0], 0.001, fibonacci_data))
+print(combined_brent(functions[0], 0.001, combined_brent_data))
 print(parabolic_data.create_dataframe())
 print(golden_ratio_data.create_dataframe())
 print(dichotomy_data.create_dataframe())
 print(fibonacci_data.create_dataframe())
+print(combined_brent_data.create_dataframe())
 epsilons = [0.0001 * (i + 1) for i in range(NUMBER_OF_EPSILON)]
 x = [math.log2(epsilon) for epsilon in epsilons]
 plt.plot(x, find_ordinate(functions, dichotomy, epsilons), label="dichotomy")
 plt.plot(x, find_ordinate(functions, golden_ratio, epsilons), label="golden_ratio")
 plt.plot(x, find_ordinate(functions, fibonacci, epsilons), label="fibonacci")
 plt.plot(x, find_ordinate(functions, parabolic, epsilons), label="parabolic")
+plt.plot(x, find_ordinate(functions, combined_brent, epsilons), label="combined_brent")
 plt.xlabel("log(eps)")
 plt.ylabel("Iteration quantity")
 plt.legend(loc="best")
