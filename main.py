@@ -1,8 +1,9 @@
 import math
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-NUMBER_OF_EPSILON = 10000
+NUMBER_OF_EPSILON = 1000
 
 
 class Data:
@@ -11,6 +12,11 @@ class Data:
     # dots массив кортежей типа [a, b], где a-какая-то точка, b какая-то точка, хз какие точно точки, думаю те которые
     # участвуют в вычислении границ
     # func_results массив кортежей типа [a, b], где a-значение f в первой точке, b-во второй
+    borders = []
+    lengths = []
+    dots = []
+    func_results = []
+
     def __init__(self, borders, lengths, dots, func_results):
         self.borders = borders
         self.lengths = lengths
@@ -29,13 +35,11 @@ class Data:
         })
         return df
 
-
-def sign(x):
-    if x > 0:
-        return 1
-    if x < 1:
-        return -1
-    return 0
+    def clear_data(self):
+        self.borders = []
+        self.lengths = []
+        self.dots = []
+        self.func_results = []
 
 
 def f1(x):
@@ -58,7 +62,12 @@ def f5(x):
     return 0.2 * x * math.log10(x) + (x - 2.3) ** 2
 
 
+def f6(x):
+    return math.sin(20 * x) * x
+
+
 def dichotomy(function, epsilon, data):
+    data.clear_data()
     iteration = 0
     delta = epsilon * 0.49
     left_border = function[1]
@@ -90,6 +99,7 @@ def dichotomy(function, epsilon, data):
 
 
 def golden_ratio(function, epsilon, data):
+    data.clear_data()
     iteration = 0
     left_border = function[1]
     right_border = function[2]
@@ -120,6 +130,7 @@ def golden_ratio(function, epsilon, data):
 
 
 def fibonacci(function, epsilon, data):
+    data.clear_data()
     n = get_n(function[1], function[2], epsilon)
     a = function[1]
     b = function[2]
@@ -150,46 +161,68 @@ def fibonacci(function, epsilon, data):
     return x1
 
 
-def combined_brent(function, epsilon):
+def combined_brent(function, epsilon, data):
+    data.clear_data()
+
     a = function[1]
     c = function[2]
 
-    x = w = v = (a + c) / 2
-
+    x = w = v = a + 0.381966011 * (c - a)
     fx = fw = fv = function[0](x)
+    d = 0
+    e = d
 
-    d = e = c - a
+    data.borders.append([a, c])
+    data.lengths.append(math.fabs(d))
+    data.func_results.append([function[0](a), function[0](c)])
+    data.dots.append([a, c])
 
-    while (c - a) < epsilon:
-        g = e
-        e = d
+    t = 1e-4
+    while True:
+        tol = epsilon * abs(x) + t
 
-        u = 0
-        if x != w and w != v and x != v:
-            f2 = function[0](x)
-            f1 = function[0](v)
-            f3 = function[0](w)
-            u = x - 0.5 * ((f2 - f3) * (x - w) ** 2 - (f2 - f1) * (x - v) ** 2) /\
-                ((x - w) * (f2 - f3) - (x - v) * (f2 - f1))
+        if abs(x - (a + c) / 2) <= 2 * tol - (c - a) / 2:
+            break
 
-        if (a + epsilon < u < c - epsilon) and (abs(u - x) < g / 2):
-            d = abs(u - x)
+        r = q = p = 0
+
+        if abs(e) > tol:
+            r = (x - w) * (fx - fv)
+            q = (x - v) * (fx - fw)
+            p = (x - v) * q - (x - w) * r
+            q = 2 * (q - r)
+
+            if q > 0:
+                p = -p
+
+            q = abs(q)
+            r, e = e, d
+
+        if (abs(p) < abs(0.5 * q * r)) and (q * (a - x) < p) and (p < q * (c - x)):
+            d = p / q
+            u = x + d
+
+            if (u - a < 2 * tol) and (c - u < 2 * tol):
+                d = tol if x < (a + c) / 2 else -tol
 
         else:
-            if x < (c - a) / 2:
-                u = x + 0.381966011 * (c - x)
-                d = c - x
+            if x < (c + a) / 2:
+                e = c - x
+                d = 0.381966011 * e
             else:
-                u = x - 0.381966011 * (x - a)
-                d = x - a
+                e = a - x
+                d = 0.381966011 * e
 
-        if abs(u - x) < epsilon:
-            u = x + sign(u - x) * epsilon
+        if tol <= abs(d):
+            u = x + d
+        elif d > 0:
+            u = x + tol
+        else:
+            u = x - tol
 
         fu = function[0](u)
 
-        if fu < fx:
-
+        if fu <= fx:
             if u >= x:
                 a = x
             else:
@@ -213,12 +246,16 @@ def combined_brent(function, epsilon):
                 w = u
                 fv = fw
                 fw = fu
-            elif fu <= fv or v == x or v == w:
+            elif fu <= fv or v == x or v == w < epsilon:
                 v = u
                 fv = fu
+        data.borders.append([a, c])
+        data.lengths.append(math.fabs(d))
+        data.func_results.append([function[0](a), function[0](c)])
+        data.dots.append([a, c])
+
     return x
                     
-
 
 def get_fibonacci(n):
     return round(1 / math.sqrt(5) * (((1 + math.sqrt(5)) / 2) ** n - ((1 - math.sqrt(5)) / 2) ** n))
@@ -229,10 +266,11 @@ def get_n(left_border, right_border, epsilon):
     return math.ceil(math.log(argument, ((1 + math.sqrt(5)) / 2)))
 
 
-functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f5, 0.5, 2.5]]
+functions = [[f1, -0.5, 0.5], [f2, 6, 9.9], [f3, 0, 2 * math.pi], [f4, 0, 1], [f5, 0.5, 2.5], [f6, -0.1, 0.5]]
 
 
 def parabolic(function, epsilon, data):
+    data.clear_data()
     x1 = function[1]
     x3 = function[2]
     f1 = function[0](x1)
@@ -244,7 +282,9 @@ def parabolic(function, epsilon, data):
     while x3 - x1 > epsilon:
         x2 = (x1 + x3) / 2
         f2 = function[0](x2)
+
         u = x2 - 0.5*((f2 - f3)*(x2 - x1)**2 - (f2 - f1)*(x2 - x3)**2)/((x2 - x1)*(f2 - f3) - (x2 - x3)*(f2 - f1))
+
         fu = function[0](u)
         data.func_results.append([f2, fu])
         data.dots.append([x2, u])
@@ -266,15 +306,53 @@ def parabolic(function, epsilon, data):
     return (x1 + x3) / 2
 
 
+def find_ordinate(functions, method, epsilons):
+    data = Data([], [], [], [])
+    y = []
+    for epsilon in epsilons:
+        method(functions[0], epsilon, data)
+        y.append(len(data.create_dataframe().values))
+    return y
+
+
 parabolic_data = Data([], [], [], [])
 dichotomy_data = Data([], [], [], [])
 golden_ratio_data = Data([], [], [], [])
 fibonacci_data = Data([], [], [], [])
+combined_brent_data = Data([], [], [], [])
 print(parabolic(functions[0], 0.001, parabolic_data))
 print(dichotomy(functions[0], 0.001, dichotomy_data))
 print(golden_ratio(functions[0], 0.001, golden_ratio_data))
 print(fibonacci(functions[0], 0.001, fibonacci_data))
+print(combined_brent(functions[0], 0.001, combined_brent_data))
 print(parabolic_data.create_dataframe())
 print(golden_ratio_data.create_dataframe())
 print(dichotomy_data.create_dataframe())
 print(fibonacci_data.create_dataframe())
+print(combined_brent_data.create_dataframe())
+epsilons = [0.0001 * (i + 1) for i in range(NUMBER_OF_EPSILON)]
+x = [math.log2(epsilon) for epsilon in epsilons]
+plt.plot(x, find_ordinate(functions, dichotomy, epsilons), label="dichotomy")
+plt.plot(x, find_ordinate(functions, golden_ratio, epsilons), label="golden_ratio")
+plt.plot(x, find_ordinate(functions, fibonacci, epsilons), label="fibonacci")
+plt.plot(x, find_ordinate(functions, parabolic, epsilons), label="parabolic")
+plt.plot(x, find_ordinate(functions, combined_brent, epsilons), label="combined_brent")
+plt.xlabel("log(eps)")
+plt.ylabel("Iteration quantity")
+plt.legend(loc="best")
+plt.show()
+x = np.linspace(-0.1, 0.5, 500)
+y = [functions[5][0](_x) for _x in x]
+fig = plt.subplots()
+plt.plot(x, y)
+plt.show()
+print(parabolic(functions[5], 0.001, parabolic_data))
+print(dichotomy(functions[5], 0.001, dichotomy_data))
+print(golden_ratio(functions[5], 0.001, golden_ratio_data))
+print(fibonacci(functions[5], 0.001, fibonacci_data))
+print(combined_brent(functions[5], 0.001, combined_brent_data))
+print(parabolic_data.create_dataframe())
+print(golden_ratio_data.create_dataframe())
+print(dichotomy_data.create_dataframe())
+print(fibonacci_data.create_dataframe())
+print(combined_brent_data.create_dataframe())
